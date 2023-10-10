@@ -23,7 +23,9 @@
 
     <!-- JKube properties -->
     <jkube.version>1.15-SNAPSHOT</jkube.version>
+    <applicationPort>8082</applicationPort>
     <jkube.build.switchToDeployment>true</jkube.build.switchToDeployment>
+    <jkube.openshift.generateRoute>false</jkube.openshift.generateRoute> <!-- Use ingress fragment instead -->
     <!-- Web dependencies -->
     <webjars-bootstrap.version>5.2.3</webjars-bootstrap.version>
     <webjars-font-awesome.version>4.7.0</webjars-font-awesome.version>
@@ -334,6 +336,64 @@
   </pluginRepositories>
 
   <profiles>
+    <profile>
+      <id>dev</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <deployment.annotations />
+        <deployment.replicas>1</deployment.replicas>
+        <deployment.container.env.springMessagesBasename>messages/messages</deployment.container.env.springMessagesBasename>
+        <ingress.host>eclipsecon-dev.dev-sandbox.marcnuri.com</ingress.host>
+      </properties>
+    </profile>
+    <profile>
+      <id>prod</id>
+      <properties>
+        <jkube.generator.name>ghcr.io/marcnuri-demo/2023-eclipsecon-spring-petclinic</jkube.generator.name>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eclipse.jkube</groupId>
+            <artifactId>kubernetes-maven-plugin</artifactId>
+            <version>${jkube.version}</version>
+            <configuration>
+              <helm>
+                <chart>2023-eclipsecon-spring-petclinic-helm</chart> <!-- Matches the repository name -->
+                <parameters>
+                  <parameter>
+                    <name>deployment.container.env.springMessagesBasename</name>
+                    <value>messages-prod/messages</value>
+                  </parameter>
+                  <parameter>
+                    <name>deployment.replicas</name>
+                    <value>{{ .Values.deployment.replicas }}</value>
+                  </parameter>
+                  <parameter>
+                    <name>deployment.annotations</name>
+                    <value>
+                      {{- toYaml .Values.common.annotations | nindent 4 }}
+                      {{- toYaml .Values.deployment.annotations | nindent 4 }}
+                    </value>
+                  </parameter>
+                  <parameter>
+                    <name>ingress.host</name>
+                    <value>eclipsecon-prod.dev-sandbox.marcnuri.com</value>
+                  </parameter>
+                </parameters>
+                <snapshotRepository>
+                  <name>ghcr.io</name>
+                  <type>oci</type>
+                  <url>https://ghcr.io/marcnuri-demo</url> <!-- ghcr.io organization url -->
+                </snapshotRepository>
+              </helm>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>css</id>
       <build>

@@ -1,0 +1,9 @@
+common:
+  annotations:
+    eclipsecon.org/demo: Spring Pet Clinic
+    eclipsecon.org/env: Production
+deployment:
+  annotations:
+    eclipsecon.org/kind: Deployment
+  replicas: 2
+
